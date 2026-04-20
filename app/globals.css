@@ -1,0 +1,28 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0B0F1A;
+  --surface: #111827;
+  --card:    #1F2937;
+  --border:  #374151;
+  --teal:    #0D9488;
+  --teal2:   #14B8A6;
+  --blue:    #3B82F6;
+  --white:   #F9FAFB;
+  --muted:   #9CA3AF;
+  --dim:     #6B7280;
+  --red:     #EF4444;
+  --yellow:  #FBBF24;
+}
+
+html, body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type="file"] { display: none; }
+button { cursor: pointer; font-family: inherit; }
+textarea, input { font-family: 'JetBrains Mono', monospace; }
