@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { parseChordPro } from "../lib/chordpro";
+import { parseChordPro, detectAndNormalize } from "../lib/chordpro";
 import ChordDiagram from "../components/ChordDiagram";
 
 // ─── Demo song ────────────────────────────────────────────────────────────────
@@ -200,6 +200,7 @@ function HomeView({ onStart }) {
   const [dragOver, setDragOver] = useState(false);
   const [cpDragOver, setCpDragOver] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [detectedFormat, setDetectedFormat] = useState(null);
   const [error, setError] = useState('');
   const audioInputRef = useRef(null);
   const cpFileRef = useRef(null);
@@ -221,9 +222,15 @@ function HomeView({ onStart }) {
   }
 
   useEffect(() => {
-    if (!chordproText.trim()) { setPreview(null); return; }
-    try { setPreview(parseChordPro(chordproText)); setError(''); }
-    catch { setError('Could not parse ChordPro — check the format.'); }
+    if (!chordproText.trim()) { setPreview(null); setDetectedFormat(null); return; }
+    try {
+      const { text, detectedFormat: fmt } = detectAndNormalize(chordproText);
+      setPreview(parseChordPro(text));
+      setDetectedFormat(fmt);
+      setError('');
+    } catch {
+      setError('Could not parse — check your chart format.');
+    }
   }, [chordproText]);
 
   function handleStart() {
@@ -266,7 +273,7 @@ function HomeView({ onStart }) {
           gap: '1rem', marginBottom: '2.5rem' }}>
           {[
             { n:'1', icon:'♪', title:'Upload your song', body:'Drop any MP3, WAV, M4A, or OGG audio file onto the zone below.' },
-            { n:'2', icon:'♬', title:'Add a ChordPro chart', body:'Paste ChordPro text or upload a .cho / .chordpro file. Works with any standard ChordPro format.' },
+            { n:'2', icon:'♬', title:'Add a chord chart', body:'Paste ChordPro or plain-text tabs copied from Ultimate Guitar, Chordie, or similar sites — Guitaraoke detects the format automatically.' },
             { n:'3', icon:'🎸', title:'Tap to sync, then play', body:'Press Space to advance each line as the song plays. After syncing you can export a karaoke video.' },
           ].map(({ n, icon, title, body }) => (
             <div key={n} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '1.25rem 1.5rem' }}>
@@ -311,8 +318,21 @@ function HomeView({ onStart }) {
           {/* ChordPro */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em',
-                textTransform: 'uppercase', color: MUTED }}>Step 2 — ChordPro Chart</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em',
+                  textTransform: 'uppercase', color: MUTED }}>Step 2 — Chart</div>
+                {detectedFormat && (
+                  <span style={{
+                    fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em',
+                    textTransform: 'uppercase', padding: '0.15rem 0.5rem', borderRadius: 20,
+                    background: detectedFormat === 'chordpro' ? TEAL+'22' : '#7C3AED22',
+                    border: `1px solid ${detectedFormat === 'chordpro' ? TEAL+'55' : '#7C3AED55'}`,
+                    color: detectedFormat === 'chordpro' ? TEAL2 : '#A78BFA',
+                  }}>
+                    {detectedFormat === 'chordpro' ? 'ChordPro' : 'Plain text — auto-converted'}
+                  </span>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setChordproText(DEMO)} style={{ fontSize: '0.7rem', fontWeight: 600,
                   color: TEAL2, background: 'none', border: `1px solid ${TEAL}44`,
@@ -328,7 +348,7 @@ function HomeView({ onStart }) {
               </div>
             </div>
             <textarea value={chordproText} onChange={e => setChordproText(e.target.value)}
-              placeholder={`{title: My Song}\n{key: G}\n\n{start_of_verse: Verse}\n[G]Words and [D]chords\n{end_of_verse}`}
+              placeholder={`Paste ChordPro or plain-text chord chart here…\n\nChordPro:          Plain-text (UG / Chordie):\n{title: My Song}   [Verse]\n[G]Words [D]chords G       D\n                   Words and chords`}
               style={{ width: '100%', height: 154, background: SURFACE,
                 border: `1px solid ${chordproText ? TEAL+'55' : BORDER}`, borderRadius: 10,
                 padding: '0.75rem', color: WHITE, fontSize: '0.78rem', lineHeight: 1.7,
